@@ -9,18 +9,24 @@ const errorMiddleware = (err, req, res, next) => {
 // if(err instanceof CustomAPIError) {
 //     return res.status(err.statusCode).json({msg:err.message})
 // }
-if(err.code && err.code == 11000) {
-    customError.msg = `Duplicate value entered for ${Object.keys(err.keyValue)} field, please choose another value`
+// if(err.name === 'SequelizeUniqueConstraintError') {
+//     customError.msg = `Duplicate value entered for ${Object.keys(err.keyValue)} field, please choose another value`
+//     customError.statusCode = 400
+// }
+// if (err.name === 'SequelizeDatabaseError' && err.parent && err.parent.code === '23503') {
+//     // This handles foreign key constraint violations.
+//     customError.msg = 'Referenced record not found.';
+//     customError.statusCode = 400;
+//   }
+if(err.name === 'SequelizeValidationError') {
+    customError.msg = err.errors.map((error) => error.message).join(',');
     customError.statusCode = 400
 }
-if(err.name == 'ValidationError') {
-    customError.msg = Object.values(err.errors).map((item) => item.message).join(',')
-    customError.statusCode = 400
-}
-if(err.name == 'CastError') {
-    customError.msg = `No item found with this id: ${req.params}`
-    customError.statusCode = 404
-}
+// if (err.name === 'SequelizeDatabaseError' && err.parent && err.parent.code === '23505') {
+//     // This handles unique constraint violations.
+//     customError.msg = 'Duplicate entry.';
+//     customError.statusCode = 400;
+// }
 return res.status(customError.statusCode).json({
     msg: customError.msg,
     stack: customError.stack

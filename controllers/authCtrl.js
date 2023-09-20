@@ -1,6 +1,8 @@
 const User = require('../model/person')
 const uuidValidate = require('uuid-validate');
 const {StatusCodes} = require('http-status-codes')
+const {NotFoundError, BadRequestError, ConflictError} = require('../error')
+const { Op } = require('sequelize')
 const sequelize = require('../config/db')
 
 const createPerson = async(req, res) => {
@@ -11,23 +13,17 @@ const createPerson = async(req, res) => {
         res.status(StatusCodes.CREATED).json(user)
     } else {
         return res.status(StatusCodes.CONFLICT).json('Email already exists')
-        //throw new ConflictError('Email already Exists')
     }
 }
 
 const getPerson = async (req, res) => {
-    // const { param } = req.params;
-    // const user = await User.findByPk(param);
-    //   if (!user) {
-    //     return res.status(StatusCodes.NOT_FOUND).json(`User with id: ${param} not found`);
-    //   }
-    //   res.status(200).json({ user });
 const { param } = req.params;
   if (uuidValidate(param, 4)) {
     try {
       const user = await User.findByPk(param);
       if (!user) {
-        return res.status(StatusCodes.NOT_FOUND).json(`User with id: ${param} not found`);;
+        throw new NotFoundError(`User with id: ${param} not found`);
+        //return res.status(StatusCodes.NOT_FOUND).json(`User with id: ${param} not found`);;
       }
       res.status(200).json({ user });
     } catch (error) {
@@ -36,12 +32,13 @@ const { param } = req.params;
   } else {
     try {
       const user = await User.findOne({
-        where: {
-         name: param 
+        where: { 
+          [Op.or]: [{ name: param }, { email: param }]
         },
       });
       if (!user) {
-        return res.status(StatusCodes.NOT_FOUND).json(`User with name or email: ${param} not found`);
+        throw new NotFoundError(`User with name or email: ${param} not found`);
+        //return res.status(StatusCodes.NOT_FOUND).json(`User with name or email: ${param} not found`);
       }
       res.status(200).json({ user });
     } catch (error) {
@@ -50,8 +47,71 @@ const { param } = req.params;
   }
  };
 
+const updatePerson = async(req, res) => {
+  const { param } = req.params;
+    if (uuidValidate(param, 4)) {
+      user = await User.findByPk(param)
+        if (user) {
+          await user.update({
+          age: req.body.age,
+          country: req.body.country,
+        });
+        if (!user) {
+          throw new NotFoundError(`User with id: ${param} not found`);
+        }
+      }  
+    } else {
+      user = await User.findOne({
+        where: {
+          [Op.or]: [{ name: param }, { email: param }] ,
+        }
+      })
+      if(user) {
+        await user.update({
+        age: req.body.age,
+        country: req.body.country,
+      })
+    }
+    if (!user) {
+      throw new NotFoundError(`User with name or email: ${param} not found`);
+        //return res.status(StatusCodes.NOT_FOUND).json(`User with name or email: ${param} not found`)
+  //return res.status(404).json({ message: 'Person not found' });
+    }
+  }
+      res.status(200).json({ message: 'Person updated', user });
+};
+
+const deletePerson = async(req, res) => {
+  const { param } = req.params;
+    if (uuidValidate(param, 4)) {
+      user = await User.findByPk(param)
+        if (user) {
+          await user.destroy();
+        if (!user) {
+            throw new NotFoundError(`User with id: ${param} not found`);
+          }
+      }  
+    } else {
+      user = await User.findOne({
+        where: {
+          [Op.or]: [{ name: param }, { email: param }] ,
+        }
+      })
+      if(user) {
+        await user.destroy()
+    }
+    if (!user) {
+      throw new NotFoundError(`User with name or email: ${param} not found`);
+       // return res.status(StatusCodes.NOT_FOUND).json(`User with name or email: ${param} not found`)
+  
+    }
+  }
+      res.status(200).json({ message: 'Person deleted', user });
+};
 
 module.exports = {
     createPerson,
     getPerson,
+    updatePerson,
+    deletePerson
 }

@@ -4,12 +4,6 @@ const sequelize = require('../config/db')
 
 
 const User = sequelize.define('User', {
-    // Model attributes are defined here
-    // id: {
-    //     type: DataTypes.INTEGER,
-    //     autoIncrement: true,
-    //     primaryKey: true
-    // },
     id: {
       type: DataTypes.UUID, // Assuming UUIDs are stored as strings
       primaryKey: true,
@@ -20,8 +14,11 @@ const User = sequelize.define('User', {
       allowNull: false,
       validate: {
         notNull: {
-          msg: 'Please enter your name'
-        }
+          msg: 'Name cannot be NULL'
+        },
+        notEmpty: {
+          msg: 'Name cannot be empty'
+        },
       }
     },
     email: {
@@ -29,23 +26,31 @@ const User = sequelize.define('User', {
         type: DataTypes.STRING,
         allowNull: false,
         validate: {
+          isEmail: {
+            msg: 'Invalid email format.'
+          },
           notNull: {
-            msg: 'Please enter your email'
-          }
+            msg: 'Email cannot be NULL'
+          },
+          notEmpty:{
+            msg: 'Email cannot be empty'
+          },
         }
     },
     age: {
       type: DataTypes.INTEGER
       // allowNull defaults to true
     },
-    gender: {
-        type: DataTypes.STRING
+    country:{
+      type: DataTypes.STRING
     },
-    // uuid: {
-    //     type: DataTypes.UUID,
-    //     defaultValue: DataTypes.UUIDV4 
-    // }
-
+    gender: {
+      type: DataTypes.ENUM('Female', 'Male', 'Prefer not to say'),
+      allowNull: false,
+      defaultValue: 'Prefer not to say'
+    },
+}, {
+  timestamps: false
 });
   
 sequelize.sync();
